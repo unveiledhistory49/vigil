@@ -1,12 +1,3 @@
 {
-  "buildCommand": "bun run build",
-  "outputDirectory": "dist",
-  "cleanUrls": true,
-  "rewrites": [
-    { "source": "/images/(.*)", "destination": "/images/$1" },
-    { "source": "/favicon.svg", "destination": "/favicon.svg" },
-    { "source": "/main.js", "destination": "/main.js" },
-    { "source": "/main.css", "destination": "/main.css" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "outputDirectory": "dist"
 }
