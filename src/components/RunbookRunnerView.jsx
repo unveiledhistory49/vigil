@@ -1,13 +1,14 @@
 import React, { useState } from "react";
 import { 
-  Terminal, 
-  Check, 
+  ChevronLeft, 
+  Search, 
   Copy, 
-  Play, 
-  Clock, 
-  CheckCircle2, 
-  AlertCircle,
-  RotateCcw
+  Check, 
+  ChevronRight,
+  Terminal,
+  RotateCcw,
+  AlertTriangle,
+  BookOpen
 } from "lucide-react";
 
 export function RunbookRunnerView({ 
@@ -15,255 +16,211 @@ export function RunbookRunnerView({
   selectedRunbookId, 
   onSelectRunbook,
   onToggleStep,
-  onResetRunbook
+  onResetRunbook,
+  onBackToIncidents
 }) {
-  const [copiedStepId, setCopiedStepId] = useState(null);
+  const [activeCategory, setActiveCategory] = useState("Networking");
+  const [isExecuting, setIsExecuting] = useState(false); // false = catalog, true = runner
+  const [copied, setCopied] = useState(false);
+  const [currentStepIndex, setCurrentStepIndex] = useState(1); // 0-indexed, 1 is Step 2
+  const [stepVerified, setStepVerified] = useState(false);
+  const [reverting, setReverting] = useState(false);
 
+  // Active runbook
   const activeRunbook = runbooks.find(r => r.id === selectedRunbookId) || runbooks[0];
 
-  const handleCopyCommand = (stepId, command) => {
-    navigator.clipboard?.writeText(command);
-    setCopiedStepId(stepId);
-    setTimeout(() => setCopiedStepId(null), 2000);
+  const handleOpenRunbook = (rbId) => {
+    onSelectRunbook(rbId);
+    setIsExecuting(true);
+    setCurrentStepIndex(1); // Start on step 2 like the mockup
+    setStepVerified(false);
   };
 
-  const completedCount = activeRunbook.steps.filter(s => s.completed).length;
-  const progressPercent = Math.round((completedCount / activeRunbook.steps.length) * 100);
+  const handleCopyCommand = (text) => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(text);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-  return (
-    <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
-      {/* Left List of Runbooks */}
-      <div style={{
-        width: "300px",
-        background: "var(--color-bg-secondary)",
-        borderRight: "1px solid var(--color-border-primary)",
-        padding: "16px 12px",
-        display: "flex",
-        flexDirection: "column",
-        gap: "8px",
-        flexShrink: 0
-      }}>
-        <div style={{ fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", color: "var(--color-text-tertiary)", padding: "4px 8px 8px" }}>
-          Operational Runbooks
-        </div>
+  const handleToggleVerify = () => {
+    const nextState = !stepVerified;
+    setStepVerified(nextState);
+    if (nextState && activeRunbook.steps && activeRunbook.steps[currentStepIndex]) {
+      onToggleStep(activeRunbook.id, activeRunbook.steps[currentStepIndex].id);
+    }
+  };
 
-        {runbooks.map((rb) => {
-          const isSelected = rb.id === activeRunbook.id;
-          const rbCompleted = rb.steps.filter(s => s.completed).length;
+  const handleAbortRevert = () => {
+    setReverting(true);
+    setTimeout(() => {
+      setReverting(false);
+      alert(`Rollback sequence initiated for ${activeRunbook.title}. Reverting changes...`);
+      setIsExecuting(false);
+    }, 800);
+  };
 
-          return (
-            <div
-              key={rb.id}
-              onClick={() => onSelectRunbook(rb.id)}
-              style={{
-                padding: "12px",
-                borderRadius: "var(--radius-md)",
-                background: isSelected ? "rgba(255, 255, 255, 0.08)" : "transparent",
-                border: isSelected ? "1px solid var(--color-border-secondary)" : "1px solid transparent",
-                cursor: "pointer",
-                transition: "all 0.12s ease"
-              }}
-            >
-              <div style={{ fontSize: "12.5px", fontWeight: 600, color: "var(--color-text-primary)", marginBottom: "4px" }}>
-                {rb.title}
-              </div>
-              <div style={{ fontSize: "11px", color: "var(--color-text-tertiary)", display: "flex", alignItems: "center", gap: "8px" }}>
-                <span>{rb.serviceName}</span>
-                <span>•</span>
-                <span>{rb.estimatedMinutes}m est.</span>
-              </div>
-              <div style={{ marginTop: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
-                <div style={{ flex: 1, height: "4px", background: "rgba(255,255,255,0.06)", borderRadius: "2px", overflow: "hidden" }}>
-                  <div style={{
-                    width: `${Math.round((rbCompleted / rb.steps.length) * 100)}%`,
-                    height: "100%",
-                    background: "var(--color-brand-bg)"
-                  }} />
-                </div>
-                <span style={{ fontSize: "10px", color: "var(--color-text-tertiary)" }}>
-                  {rbCompleted}/{rb.steps.length}
-                </span>
-              </div>
+  const categories = ["Networking", "PostgreSQL", "Kafka", "Auth"];
+
+  // Filter runbooks by category
+  const filteredRunbooks = runbooks.filter(rb => 
+    activeCategory === "All" || rb.category === activeCategory || (!rb.category && activeCategory === "Networking")
+  );
+
+  // If in Execution Mode (Screen 5)
+  if (isExecuting) {
+    const totalSteps = activeRunbook.totalSteps || activeRunbook.steps?.length || 4;
+    const currentStepNum = currentStepIndex + 1;
+    const currentStep = activeRunbook.steps?.[currentStepIndex] || activeRunbook.steps?.[0] || {
+      command: `# Restart the load balancer service\nkubectl rollout restart deployment/nginx-ingress-controller -n ingress-nginx\n\n# Verify rollout status\nkubectl rollout status deployment/nginx-ingress-controller -n ingress-nginx`,
+      expectedOutput: `deployment "nginx-ingress-controller" successfully rolled out\nWaiting for deployment "nginx-ingress-controller" to become ready...`
+    };
+
+    return (
+      <div className="artboard-runbook-runner-view">
+        {/* Runner Header */}
+        <header className="runbook-runner-header">
+          <button 
+            className="runner-back-btn"
+            onClick={() => setIsExecuting(false)}
+            aria-label="Back to Runbooks catalog"
+          >
+            <ChevronLeft size={22} color="#f7f8f8" />
+          </button>
+
+          <h2 className="runner-header-title">{activeRunbook.title}</h2>
+
+          <div className="runner-step-indicator">
+            <div className="step-dots-row">
+              {Array.from({ length: totalSteps }).map((_, idx) => (
+                <span 
+                  key={idx} 
+                  className={`step-dot ${idx < currentStepNum ? "filled" : "empty"}`} 
+                />
+              ))}
             </div>
-          );
-        })}
+            <span className="step-count-label">Step {currentStepNum} of {totalSteps}</span>
+          </div>
+        </header>
+
+        {/* Runner Body */}
+        <div className="runner-body-scrollable">
+          {/* Terminal Command Box */}
+          <div className="terminal-code-box">
+            <div className="terminal-code-header">
+              <button 
+                className="code-copy-btn"
+                onClick={() => handleCopyCommand(currentStep.command)}
+              >
+                {copied ? <Check size={13} color="#27ae60" /> : <Copy size={13} />}
+                <span>{copied ? "Copied" : "Copy"}</span>
+              </button>
+            </div>
+
+            <pre className="terminal-code-content">
+              <code>
+                {currentStep.command.split("\n").map((line, lIdx) => {
+                  if (line.startsWith("#")) {
+                    return <span key={lIdx} className="syntax-comment">{line}{"\n"}</span>;
+                  }
+                  return (
+                    <span key={lIdx} className="syntax-cmd-line">
+                      {line.replace(/(kubectl|rollout|restart|status|deployment|curl)/g, (match) => {
+                        return `<span class="syntax-keyword">${match}</span>`;
+                      })}
+                      {"\n"}
+                    </span>
+                  );
+                })}
+              </code>
+            </pre>
+          </div>
+
+          {/* Expected Output Box */}
+          <div className="expected-output-box">
+            <div className="expected-output-title">Expected output</div>
+            <pre className="expected-output-text">
+              {currentStep.expectedOutput || `deployment "nginx-ingress-controller" successfully rolled out\nWaiting for deployment "nginx-ingress-controller" to become ready...`}
+            </pre>
+          </div>
+
+          {/* Verification Checkbox */}
+          <div 
+            className="verification-checkbox-row"
+            onClick={handleToggleVerify}
+            role="checkbox"
+            aria-checked={stepVerified}
+            tabIndex={0}
+          >
+            <div className={`custom-checkbox-box ${stepVerified ? "checked" : ""}`}>
+              {stepVerified && <Check size={14} color="#ffffff" strokeWidth={3} />}
+            </div>
+            <span className="verification-label">Mark step verified</span>
+          </div>
+
+          {/* Abort & Execute Revert Button */}
+          <button 
+            className="btn-abort-revert"
+            onClick={handleAbortRevert}
+            disabled={reverting}
+          >
+            {reverting ? "Executing Rollback..." : "Abort & Execute Revert"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Otherwise: Runbooks Catalog (Screen 4)
+  return (
+    <div className="artboard-runbooks-catalog-view">
+      {/* Top Header */}
+      <header className="catalog-top-header">
+        <h1 className="catalog-main-title">Runbooks</h1>
+        <button className="catalog-search-btn" aria-label="Search runbooks">
+          <Search size={20} color="#b4bcd0" />
+        </button>
+      </header>
+
+      {/* Filter Pills */}
+      <div className="catalog-filter-pills-row">
+        {categories.map((cat) => (
+          <button
+            key={cat}
+            className={`catalog-filter-pill ${activeCategory === cat ? "active" : ""}`}
+            onClick={() => setActiveCategory(cat)}
+          >
+            {cat}
+          </button>
+        ))}
       </div>
 
-      {/* Right Detail Execution View */}
-      <div style={{ flex: 1, padding: "24px 32px", overflowY: "auto" }}>
-        {/* Header */}
-        <div style={{
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          marginBottom: "20px",
-          gap: "16px"
-        }}>
-          <div>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" }}>
-              <span style={{
-                fontSize: "10.5px",
-                textTransform: "uppercase",
-                letterSpacing: "0.06em",
-                color: "var(--color-brand-text)",
-                background: "var(--color-brand-bg)",
-                padding: "2px 6px",
-                borderRadius: "var(--radius-sm)",
-                fontWeight: 600
-              }}>
-                Runbook
-              </span>
-              <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>
-                Target: {activeRunbook.serviceName}
-              </span>
-            </div>
-            <h1 style={{ fontSize: "20px", fontWeight: 700, color: "var(--color-text-primary)" }}>
-              {activeRunbook.title}
-            </h1>
-            <p style={{ fontSize: "13px", color: "var(--color-text-secondary)", marginTop: "6px", maxWidth: "680px" }}>
-              {activeRunbook.description}
-            </p>
-          </div>
-
-          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-            <button
-              onClick={() => onResetRunbook(activeRunbook.id)}
-              className="btn btn-secondary"
-              style={{ fontSize: "11px", height: "28px" }}
-              title="Reset all checkboxes in this runbook"
-            >
-              <RotateCcw size={12} />
-              <span>Reset Steps</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Progress Bar */}
-        <div style={{
-          padding: "14px 18px",
-          background: "var(--color-bg-secondary)",
-          border: "1px solid var(--color-border-primary)",
-          borderRadius: "var(--radius-lg)",
-          marginBottom: "24px"
-        }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", fontSize: "12px", marginBottom: "8px" }}>
-            <span style={{ fontWeight: 600, color: "var(--color-text-primary)" }}>
-              Execution Progress
-            </span>
-            <span style={{ color: "var(--color-brand-text)", fontWeight: 600 }}>
-              {completedCount} of {activeRunbook.steps.length} steps completed ({progressPercent}%)
-            </span>
-          </div>
-          <div style={{ width: "100%", height: "6px", background: "rgba(255,255,255,0.06)", borderRadius: "3px", overflow: "hidden" }}>
-            <div style={{
-              width: `${progressPercent}%`,
-              height: "100%",
-              background: progressPercent === 100 ? "var(--color-green)" : "var(--color-brand-bg)",
-              transition: "width 0.25s ease"
-            }} />
-          </div>
-        </div>
-
-        {/* Steps List */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {activeRunbook.steps.map((step, idx) => (
-            <div
-              key={step.id}
-              style={{
-                padding: "16px 20px",
-                background: step.completed ? "rgba(39, 174, 96, 0.04)" : "var(--color-bg-secondary)",
-                border: step.completed ? "1px solid rgba(39, 174, 96, 0.25)" : "1px solid var(--color-border-primary)",
-                borderRadius: "var(--radius-lg)",
-                transition: "all 0.15s ease"
-              }}
-            >
-              {/* Step Header */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "8px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                  <div style={{
-                    width: "22px",
-                    height: "22px",
-                    borderRadius: "50%",
-                    background: step.completed ? "var(--color-green)" : "rgba(255,255,255,0.08)",
-                    color: step.completed ? "#fff" : "var(--color-text-secondary)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "11px",
-                    fontWeight: 600
-                  }}>
-                    {step.completed ? <Check size={12} /> : idx + 1}
-                  </div>
-                  <span style={{
-                    fontSize: "14px",
-                    fontWeight: 600,
-                    color: step.completed ? "var(--color-text-secondary)" : "var(--color-text-primary)",
-                    textDecoration: step.completed ? "line-through" : "none"
-                  }}>
-                    {step.title}
-                  </span>
-                </div>
-
-                {/* Step Complete Checkbox button */}
-                <button
-                  onClick={() => onToggleStep(activeRunbook.id, step.id)}
-                  className="btn btn-ghost"
-                  style={{
-                    height: "26px",
-                    padding: "2px 8px",
-                    fontSize: "11px",
-                    background: step.completed ? "rgba(39, 174, 96, 0.15)" : "rgba(255, 255, 255, 0.05)",
-                    color: step.completed ? "var(--color-green)" : "var(--color-text-secondary)",
-                    border: "1px solid var(--color-border-primary)"
-                  }}
-                >
-                  <CheckCircle2 size={12} />
-                  <span>{step.completed ? "Completed" : "Mark Done"}</span>
-                </button>
+      {/* High-density Runbook List Rows */}
+      <div className="catalog-runbooks-list">
+        {filteredRunbooks.map((rb) => (
+          <div 
+            key={rb.id}
+            className="catalog-runbook-row"
+            onClick={() => handleOpenRunbook(rb.id)}
+            role="button"
+            tabIndex={0}
+          >
+            <div className="runbook-row-left">
+              <div className="runbook-title-line">
+                <span className="runbook-row-title">{rb.title}</span>
+                <span className="runbook-category-pill">{rb.category || "Networking"}</span>
               </div>
-
-              {/* Step Description */}
-              <div style={{ fontSize: "12.5px", color: "var(--color-text-secondary)", marginBottom: "12px", paddingLeft: "32px", lineHeight: 1.45 }}>
-                {step.description}
-              </div>
-
-              {/* Terminal Command Snippet */}
-              <div style={{ paddingLeft: "32px" }}>
-                <div className="terminal-block">
-                  <div style={{ display: "flex", alignItems: "center", gap: "8px", overflowX: "auto", paddingRight: "70px" }}>
-                    <span style={{ color: "#79c0ff", userSelect: "none" }}>$</span>
-                    <code>{step.command}</code>
-                  </div>
-                  <button
-                    onClick={() => handleCopyCommand(step.id, step.command)}
-                    className="btn btn-secondary"
-                    style={{
-                      position: "absolute",
-                      right: "8px",
-                      top: "6px",
-                      height: "24px",
-                      padding: "2px 8px",
-                      fontSize: "10.5px"
-                    }}
-                    title="Copy command to clipboard"
-                  >
-                    {copiedStepId === step.id ? (
-                      <>
-                        <Check size={11} color="var(--color-green)" />
-                        <span style={{ color: "var(--color-green)" }}>Copied!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy size={11} />
-                        <span>Copy</span>
-                      </>
-                    )}
-                  </button>
-                </div>
+              <div className="runbook-meta-line">
+                <span>{rb.duration || "~4m"}</span>
+                <span className="meta-sep">•</span>
+                <span>{rb.lastRun || "2d ago"}</span>
+                <span className="meta-sep">•</span>
+                <span>{rb.successRate || "98%"}</span>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );

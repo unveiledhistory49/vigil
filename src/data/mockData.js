@@ -3,261 +3,201 @@
 export const INITIAL_INCIDENTS = [
   {
     id: "INC-409",
-    title: "EU-West Primary API Gateway 504 Gateway Timeouts",
+    title: "EU Gateway Errors",
     severity: "P0",
     status: "investigating",
     serviceId: "svc-api-gw",
-    serviceName: "API Gateway & Edge Routing",
+    serviceName: "api-gateway",
     commander: {
       name: "Elena Rostova",
-      role: "Principal SRE",
-      initials: "ER"
+      role: "Primary On-Call",
+      initials: "ER",
+      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
     },
     createdAt: "14m ago",
     updatedAt: "2m ago",
-    impact: "18.4% of inbound requests returning HTTP 504 across Frankfurt and Dublin ingress clusters.",
+    errorRate: "12.4%",
+    errorRateTarget: "< 1%",
+    p99Latency: "842ms",
+    p99LatencyTarget: "< 300ms",
+    affectedCustomers: 187,
+    serviceHealth: "Degraded",
+    impactedServices: [
+      { name: "api-gateway", sev: "P0" },
+      { name: "payments", sev: "P1" },
+      { name: "search", sev: "P3" },
+      { name: "frontend", sev: "P3" }
+    ],
+    impact: "Inbound requests returning HTTP 504 across Frankfurt and Dublin ingress clusters.",
     slackChannel: "#inc-409-eu-gateway",
-    warRoomUrl: "https://meet.vigil.internal/war-room-409",
+    warRoomUrl: "https://meet.google.com/inc-409-huddle",
     runbookId: "rb-envoy-drain",
+    activeRunbook: {
+      title: "Runbook: Envoy Proxy Pool Drain",
+      description: "Drain unhealthy proxies and restore pool.",
+      stepText: "Step 1 of 4",
+      totalSteps: 4,
+      currentStep: 1
+    },
     timeline: [
       {
         id: "tl-1",
-        time: "14m ago",
-        author: "Datadog Telemetry",
+        time: "03:12 UTC",
+        author: "Datadog Alert",
         type: "system",
-        message: "P99 latency exceeded 4500ms on edge-ingress-eu. Alert threshold: 500ms."
+        message: "Error rate crossed 5% threshold"
       },
       {
         id: "tl-2",
-        time: "12m ago",
-        author: "Elena Rostova",
-        type: "user",
-        message: "P0 declared. Assembling war room. Escalating to Ingress Platform engineers."
+        time: "03:14 UTC",
+        author: "PagerDuty Router",
+        type: "system",
+        message: "On-call notified (Elena Rostova)"
       },
       {
         id: "tl-3",
-        time: "7m ago",
-        author: "Klaus Weber",
-        type: "user",
-        message: "Identified connection pool exhaustion on upstream Envoy sidecars following config push v2.41.9."
-      },
-      {
-        id: "tl-4",
-        time: "2m ago",
+        time: "03:16 UTC",
         author: "Elena Rostova",
-        type: "action",
-        message: "Started executable runbook: Envoy Sidecar Rollback and Pool Drain."
+        type: "user",
+        message: "Incident declared (P0)"
       }
     ]
   },
   {
-    id: "INC-408",
-    title: "Stripe Webhook Delivery Delays Exceeding 180s",
+    id: "INC-402",
+    title: "Payment Service Latency",
     severity: "P1",
     status: "identified",
     serviceId: "svc-billing",
-    serviceName: "Billing & Stripe Webhook Sync",
+    serviceName: "payments",
     commander: {
-      name: "Marcus Vance",
-      role: "Staff Backend Engineer",
-      initials: "MV"
+      name: "Marcus Chen",
+      role: "Payments SRE",
+      initials: "MC",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80"
     },
-    createdAt: "42m ago",
-    updatedAt: "9m ago",
-    impact: "Subscription provisioning delayed by 3 to 5 minutes for new checkout sessions.",
-    slackChannel: "#inc-408-billing-lag",
-    warRoomUrl: "https://meet.vigil.internal/war-room-408",
-    runbookId: "rb-stripe-reconcile",
+    createdAt: "28m ago",
+    updatedAt: "14m ago",
+    errorRate: "4.8%",
+    errorRateTarget: "< 0.5%",
+    p99Latency: "410ms",
+    p99LatencyTarget: "< 200ms",
+    affectedCustomers: 64,
+    serviceHealth: "Degraded",
+    impactedServices: [
+      { name: "payments", sev: "P1" }
+    ],
+    impact: "Webhook workers throttled due to database lock contention.",
+    slackChannel: "#inc-402-payment-latency",
+    warRoomUrl: "https://meet.google.com/inc-402-huddle",
+    runbookId: "rb-restart-lb",
+    activeRunbook: {
+      title: "Runbook: Restart Load Balancer",
+      description: "Graceful restart of ingress pods.",
+      stepText: "Step 2 of 4",
+      totalSteps: 4,
+      currentStep: 2
+    },
     timeline: [
-      {
-        id: "tl-5",
-        time: "42m ago",
-        author: "Cloudwatch Monitor",
-        type: "system",
-        message: "Dead letter queue depth exceeded 1,200 events on payments-inbound."
-      },
-      {
-        id: "tl-6",
-        time: "35m ago",
-        author: "Marcus Vance",
-        type: "user",
-        message: "P1 declared. Webhook worker consumer concurrency throttled by database row locks."
-      },
-      {
-        id: "tl-7",
-        time: "18m ago",
-        author: "Devon Reed",
-        type: "user",
-        message: "Identified advisory lock conflict on account_subscriptions table during batch upsert."
-      },
-      {
-        id: "tl-8",
-        time: "9m ago",
-        author: "Marcus Vance",
-        type: "action",
-        message: "Applying partition index fix and scaling consumer pool to 12 workers."
-      }
+      { id: "tl-4", time: "02:45 UTC", author: "CloudWatch", type: "system", message: "Dead letter queue depth exceeded 1,200 events." },
+      { id: "tl-5", time: "02:50 UTC", author: "Marcus Chen", type: "user", message: "Identified lock contention on transaction ledger." }
     ]
   },
   {
-    id: "INC-407",
-    title: "Vector Search Cluster Replica Lag Spike",
+    id: "INC-398",
+    title: "Search Degraded",
     severity: "P2",
     status: "monitoring",
     serviceId: "svc-search",
-    serviceName: "Vector Search & Embeddings Cluster",
+    serviceName: "search",
     commander: {
-      name: "Aiko Tanaka",
-      role: "ML Platform Lead",
-      initials: "AT"
+      name: "Sophia Patel",
+      role: "Search Platform Engineer",
+      initials: "SP",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
     },
-    createdAt: "1h 15m ago",
-    updatedAt: "22m ago",
-    impact: "Semantic similarity query latency increased by 140ms. Fallback lex search operating normally.",
-    slackChannel: "#inc-407-vector-lag",
-    warRoomUrl: "https://meet.vigil.internal/war-room-407",
-    runbookId: null,
+    createdAt: "1h 10m ago",
+    updatedAt: "37m ago",
+    errorRate: "1.2%",
+    errorRateTarget: "< 0.2%",
+    p99Latency: "290ms",
+    p99LatencyTarget: "< 150ms",
+    affectedCustomers: 12,
+    serviceHealth: "Monitoring",
+    impactedServices: [
+      { name: "search", sev: "P2" }
+    ],
+    impact: "Index compaction backlog temporarily impacting search ranking latency.",
+    slackChannel: "#inc-398-search",
+    warRoomUrl: "https://meet.google.com/inc-398-huddle",
+    runbookId: "rb-flush-dns",
     timeline: [
-      {
-        id: "tl-9",
-        time: "1h 15m ago",
-        author: "Qdrant Cluster Monitor",
-        type: "system",
-        message: "Segment compaction throttling triggered on nodes v-search-03 and v-search-04."
-      },
-      {
-        id: "tl-10",
-        time: "55m ago",
-        author: "Aiko Tanaka",
-        type: "user",
-        message: "P2 declared. Resized worker IOPS limit and enabled distributed indexing bypass."
-      },
-      {
-        id: "tl-11",
-        time: "22m ago",
-        author: "Aiko Tanaka",
-        type: "action",
-        message: "Replica lag dropped back to 12ms. In 30-minute monitoring observation."
-      }
+      { id: "tl-6", time: "01:30 UTC", author: "Elastic Alert", type: "system", message: "Index compaction backlog triggered warning." },
+      { id: "tl-7", time: "01:45 UTC", author: "Sophia Patel", type: "action", message: "Allocated dedicated compute shards. Monitoring recovery." }
     ]
   },
   {
-    id: "INC-406",
-    title: "Auth Token Revocation Redis Memory Pressure",
-    severity: "P2",
-    status: "resolved",
-    serviceId: "svc-auth",
-    serviceName: "Authentication & Session Engine",
-    commander: {
-      name: "Devon Reed",
-      role: "Security Engineer",
-      initials: "DR"
-    },
-    createdAt: "2d ago",
-    updatedAt: "1d ago",
-    impact: "Redis memory reached 88% watermark. No dropped sessions or auth failures occurred.",
-    slackChannel: "#inc-406-auth-cache",
-    warRoomUrl: "https://meet.vigil.internal/war-room-406",
-    runbookId: null,
-    timeline: [
-      {
-        id: "tl-12",
-        time: "2d ago",
-        author: "Memory Alert",
-        type: "system",
-        message: "Cluster redis-auth-prod memory usage crossed 85% threshold."
-      },
-      {
-        id: "tl-13",
-        time: "2d ago",
-        author: "Devon Reed",
-        type: "user",
-        message: "P2 declared. Investigation revealed expired refresh tokens retained without TTL."
-      },
-      {
-        id: "tl-14",
-        time: "1d ago",
-        author: "Devon Reed",
-        type: "action",
-        message: "Eviction policy set to volatile-lru. Memory stabilized at 38%. Incident resolved."
-      }
-    ]
-  },
-  {
-    id: "INC-405",
-    title: "CDN Edge TLS Handshake Slowdown on Legacy Clients",
+    id: "INC-391",
+    title: "Report Generation Delays",
     severity: "P3",
-    status: "resolved",
-    serviceId: "svc-cdn",
-    serviceName: "CDN Edge Workers & Caching",
+    status: "monitoring",
+    serviceId: "svc-search",
+    serviceName: "search",
     commander: {
-      name: "Elena Rostova",
-      role: "Principal SRE",
-      initials: "ER"
+      name: "Daniel Kim",
+      role: "Data Infrastructure Lead",
+      initials: "DK",
+      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&auto=format&fit=crop&q=80"
     },
-    createdAt: "3d ago",
-    updatedAt: "3d ago",
-    impact: "Legacy TLS 1.2 clients in APAC experienced 80ms additional negotiation latency.",
-    slackChannel: "#inc-405-cdn-tls",
-    warRoomUrl: "https://meet.vigil.internal/war-room-405",
+    createdAt: "3h ago",
+    updatedAt: "2h ago",
+    errorRate: "0.4%",
+    errorRateTarget: "< 0.1%",
+    p99Latency: "180ms",
+    p99LatencyTarget: "< 120ms",
+    affectedCustomers: 4,
+    serviceHealth: "Monitoring",
+    impactedServices: [
+      { name: "search", sev: "P3" }
+    ],
+    impact: "Asynchronous PDF report generation queued behind daily batch export.",
+    slackChannel: "#inc-391-reports",
+    warRoomUrl: "https://meet.google.com/inc-391-huddle",
     runbookId: null,
     timeline: [
-      {
-        id: "tl-15",
-        time: "3d ago",
-        author: "Cloudflare Ingress Alert",
-        type: "system",
-        message: "Handshake duration spike on Tokyo and Singapore PoPs."
-      },
-      {
-        id: "tl-16",
-        time: "3d ago",
-        author: "Elena Rostova",
-        type: "action",
-        message: "Reordered cipher suite priorities to re-enable session ticket reuse. Resolved."
-      }
+      { id: "tl-8", time: "23:15 UTC", author: "Job Queue Monitor", type: "system", message: "Queue delay exceeded 120s." }
     ]
   },
   {
-    id: "INC-404",
-    title: "PostgreSQL Primary Read-Replica Synchronization Jitter",
-    severity: "P1",
-    status: "resolved",
-    serviceId: "svc-db",
-    serviceName: "Primary PostgreSQL Clustered DB",
+    id: "INC-387",
+    title: "Mobile API 5xx Spikes",
+    severity: "P3",
+    status: "monitoring",
+    serviceId: "svc-api-gw",
+    serviceName: "mobile-api",
     commander: {
-      name: "Klaus Weber",
-      role: "Database Reliability Engineer",
-      initials: "KW"
+      name: "Priya Nair",
+      role: "Mobile Backend SRE",
+      initials: "PN",
+      avatar: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=120&auto=format&fit=crop&q=80"
     },
-    createdAt: "5d ago",
-    updatedAt: "5d ago",
-    impact: "Replica wal_sender was blocked by long-running analytics query, causing 22s replication delay.",
-    slackChannel: "#inc-404-db-sync",
-    warRoomUrl: "https://meet.vigil.internal/war-room-404",
-    runbookId: "rb-pg-failover",
+    createdAt: "6h ago",
+    updatedAt: "4h ago",
+    errorRate: "0.8%",
+    errorRateTarget: "< 0.1%",
+    p99Latency: "140ms",
+    p99LatencyTarget: "< 100ms",
+    affectedCustomers: 9,
+    serviceHealth: "Monitoring",
+    impactedServices: [
+      { name: "mobile-api", sev: "P3" }
+    ],
+    impact: "Occasional HTTP 502 errors observed on legacy Android app clients.",
+    slackChannel: "#inc-387-mobile",
+    warRoomUrl: "https://meet.google.com/inc-387-huddle",
+    runbookId: "rb-clear-cdn",
     timeline: [
-      {
-        id: "tl-17",
-        time: "5d ago",
-        author: "Patroni Monitor",
-        type: "system",
-        message: "Replication lag on pg-replica-02 exceeded 15 seconds."
-      },
-      {
-        id: "tl-18",
-        time: "5d ago",
-        author: "Klaus Weber",
-        type: "user",
-        message: "Identified rogue analytics PID holding lock on billing_ledger table."
-      },
-      {
-        id: "tl-19",
-        time: "5d ago",
-        author: "Klaus Weber",
-        type: "action",
-        message: "Terminated query PID via pg_terminate_backend. Sync lag returned to <5ms."
-      }
+      { id: "tl-9", time: "20:00 UTC", author: "Ingress Monitor", type: "system", message: "Legacy TLS handshake drops detected." }
     ]
   }
 ];
@@ -266,224 +206,290 @@ export const INITIAL_SERVICES = [
   {
     id: "svc-api-gw",
     name: "API Gateway & Edge Routing",
+    shortName: "api-gateway",
     tier: "Tier 1 (Critical)",
     status: "outage",
     uptime30d: "99.91%",
     errorBudgetRemaining: 14,
-    p99Latency: "4,210ms",
+    p99Latency: "842ms",
     normalLatency: "45ms",
     owner: "Core Platform",
     onCall: {
       name: "Elena Rostova",
-      initials: "ER"
+      initials: "ER",
+      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
     },
     dependencies: ["Authentication Engine", "Primary PostgreSQL Clustered DB"],
     repo: "github.com/vigil-systems/edge-gateway",
     activeIncidents: 1
   },
   {
-    id: "svc-auth",
-    name: "Authentication & Session Engine",
-    tier: "Tier 1 (Critical)",
-    status: "healthy",
-    uptime30d: "99.99%",
-    errorBudgetRemaining: 89,
-    p99Latency: "18ms",
-    normalLatency: "18ms",
-    owner: "Identity Platform",
-    onCall: {
-      name: "Devon Reed",
-      initials: "DR"
-    },
-    dependencies: ["Primary PostgreSQL Clustered DB"],
-    repo: "github.com/vigil-systems/auth-service",
-    activeIncidents: 0
-  },
-  {
     id: "svc-billing",
-    name: "Billing & Stripe Webhook Sync",
-    tier: "Tier 2 (High)",
+    name: "Billing & Payments Engine",
+    shortName: "payments",
+    tier: "Tier 1 (Critical)",
     status: "degraded",
     uptime30d: "99.85%",
     errorBudgetRemaining: 42,
-    p99Latency: "240ms",
+    p99Latency: "410ms",
     normalLatency: "85ms",
     owner: "Monetization Team",
     onCall: {
-      name: "Marcus Vance",
-      initials: "MV"
+      name: "Marcus Chen",
+      initials: "MC",
+      avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&auto=format&fit=crop&q=80"
     },
     dependencies: ["API Gateway & Edge Routing"],
     repo: "github.com/vigil-systems/billing-worker",
     activeIncidents: 1
   },
   {
-    id: "svc-db",
-    name: "Primary PostgreSQL Clustered DB",
-    tier: "Tier 1 (Critical)",
-    status: "healthy",
-    uptime30d: "99.995%",
-    errorBudgetRemaining: 95,
-    p99Latency: "6ms",
-    normalLatency: "6ms",
-    owner: "Database Reliability",
-    onCall: {
-      name: "Klaus Weber",
-      initials: "KW"
-    },
-    dependencies: [],
-    repo: "github.com/vigil-systems/patroni-cluster",
-    activeIncidents: 0
-  },
-  {
     id: "svc-search",
-    name: "Vector Search & Embeddings Cluster",
+    name: "Vector Search & Indexing",
+    shortName: "search",
     tier: "Tier 2 (High)",
     status: "healthy",
     uptime30d: "99.96%",
     errorBudgetRemaining: 78,
-    p99Latency: "64ms",
+    p99Latency: "290ms",
     normalLatency: "60ms",
     owner: "Search Platform",
     onCall: {
-      name: "Aiko Tanaka",
-      initials: "AT"
+      name: "Sophia Patel",
+      initials: "SP",
+      avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=120&auto=format&fit=crop&q=80"
     },
     dependencies: ["Primary PostgreSQL Clustered DB"],
     repo: "github.com/vigil-systems/vector-search",
     activeIncidents: 0
   },
   {
-    id: "svc-cdn",
-    name: "CDN Edge Workers & Caching",
+    id: "svc-frontend",
+    name: "Frontend Application CDN",
+    shortName: "frontend",
     tier: "Tier 1 (Critical)",
     status: "healthy",
     uptime30d: "99.999%",
     errorBudgetRemaining: 98,
     p99Latency: "12ms",
     normalLatency: "12ms",
-    owner: "Core Platform",
+    owner: "Client Experience",
     onCall: {
       name: "Elena Rostova",
-      initials: "ER"
+      initials: "ER",
+      avatar: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=120&auto=format&fit=crop&q=80"
     },
     dependencies: [],
-    repo: "github.com/vigil-systems/edge-workers",
+    repo: "github.com/vigil-systems/web-client",
     activeIncidents: 0
   }
 ];
 
 export const INITIAL_RUNBOOKS = [
   {
+    id: "rb-restart-lb",
+    title: "Restart Load Balancer",
+    category: "Networking",
+    estimatedMinutes: 4,
+    duration: "~4m",
+    lastRun: "2d ago",
+    successRate: "98%",
+    totalSteps: 4,
+    currentStep: 2,
+    serviceId: "svc-api-gw",
+    serviceName: "API Gateway & Ingress NGINX",
+    description: "Gracefully rolling restarts ingress controller pods and validates zero-downtime routing.",
+    steps: [
+      {
+        id: "s1",
+        title: "Inspect ingress pod status",
+        command: "kubectl get pods -n ingress-nginx -l app.kubernetes.io/name=ingress-nginx",
+        expectedOutput: "NAME                                READY   STATUS    RESTARTS   AGE\nnginx-ingress-controller-7d8b9c-4x   1/1     Running   0          14d",
+        completed: true
+      },
+      {
+        id: "s2",
+        title: "Restart the load balancer service",
+        command: "# Restart the load balancer service\nkubectl rollout restart deployment/nginx-ingress-controller -n ingress-nginx\n\n# Verify rollout status\nkubectl rollout status deployment/nginx-ingress-controller -n ingress-nginx",
+        expectedOutput: "deployment \"nginx-ingress-controller\" successfully rolled out\nWaiting for deployment \"nginx-ingress-controller\" to become ready...",
+        completed: false
+      },
+      {
+        id: "s3",
+        title: "Verify health probe restoration",
+        command: "curl -I https://api.vigil.internal/healthz",
+        expectedOutput: "HTTP/2 200 OK\ncache-control: no-cache",
+        completed: false
+      },
+      {
+        id: "s4",
+        title: "Re-enable traffic routing",
+        command: "kubectl annotate ingress -n default --all traffic.routing/status=enabled",
+        expectedOutput: "ingress.networking.k8s.io/api-ingress annotated",
+        completed: false
+      }
+    ]
+  },
+  {
+    id: "rb-flush-dns",
+    title: "Flush DNS Cache",
+    category: "Networking",
+    estimatedMinutes: 2,
+    duration: "~2m",
+    lastRun: "5d ago",
+    successRate: "100%",
+    totalSteps: 3,
+    currentStep: 1,
+    serviceId: "svc-cdn",
+    serviceName: "DNS & Edge Resolvers",
+    description: "Flushes CoreDNS daemonset caches and verifies upstream authoritative resolver latency.",
+    steps: [
+      { id: "s1", title: "Flush CoreDNS cache daemonset", command: "kubectl exec -n kube-system coredns-pod -- coredns-cli cache flush", expectedOutput: "DNS Cache flushed across 6 replicas.", completed: true },
+      { id: "s2", title: "Dig test resolution", command: "dig +short api.vigil.internal @10.96.0.10", expectedOutput: "10.0.4.12", completed: false }
+    ]
+  },
+  {
+    id: "rb-rotate-ssl",
+    title: "Rotate SSL Certificate",
+    category: "Networking",
+    estimatedMinutes: 6,
+    duration: "~6m",
+    lastRun: "3d ago",
+    successRate: "97%",
+    totalSteps: 3,
+    currentStep: 1,
+    serviceId: "svc-api-gw",
+    serviceName: "Edge Gateway TLS",
+    description: "Issues Let's Encrypt rotation or syncs AWS ACM certificate secret to ingress gateway.",
+    steps: [
+      { id: "s1", title: "Renew cert-manager certificate", command: "cmctl renew api-vigil-cert -n ingress-nginx", expectedOutput: "Certificate api-vigil-cert renewal initiated.", completed: true }
+    ]
+  },
+  {
+    id: "rb-rebuild-net",
+    title: "Rebuild Network Policy",
+    category: "Networking",
+    estimatedMinutes: 7,
+    duration: "~7m",
+    lastRun: "1d ago",
+    successRate: "96%",
+    totalSteps: 4,
+    currentStep: 1,
+    serviceId: "svc-api-gw",
+    serviceName: "Cilium CNI / Network Policies",
+    description: "Reapplies Calico or Cilium network security policies across production namespaces.",
+    steps: [
+      { id: "s1", title: "Apply baseline Cilium policy", command: "cilium policy apply -f /etc/cilium/policies/ingress-strict.yaml", expectedOutput: "CiliumNetworkPolicy applied.", completed: true }
+    ]
+  },
+  {
+    id: "rb-check-conn",
+    title: "Check Service Connectivity",
+    category: "Networking",
+    estimatedMinutes: 3,
+    duration: "~3m",
+    lastRun: "4d ago",
+    successRate: "99%",
+    totalSteps: 3,
+    currentStep: 1,
+    serviceId: "svc-api-gw",
+    serviceName: "Mesh Connectivity",
+    description: "Executes synthetic ping and gRPC health checks between service mesh pods.",
+    steps: [
+      { id: "s1", title: "Run probe matrix", command: "vigil probe run --all-tiers", expectedOutput: "All 14 services reachable. Jitter < 2ms.", completed: true }
+    ]
+  },
+  {
+    id: "rb-update-fw",
+    title: "Update Firewall Rules",
+    category: "Networking",
+    estimatedMinutes: 5,
+    duration: "~5m",
+    lastRun: "6d ago",
+    successRate: "98%",
+    totalSteps: 3,
+    currentStep: 1,
+    serviceId: "svc-api-gw",
+    serviceName: "WAF & Security Groups",
+    description: "Synchronizes Cloudflare WAF ipset blocklist to AWS VPC security group rules.",
+    steps: [
+      { id: "s1", title: "Sync WAF IP rules", command: "vigil waf sync --provider cloudflare --vpc vpc-08b4e72", expectedOutput: "Security group ingress updated with 42 cidrs.", completed: true }
+    ]
+  },
+  {
+    id: "rb-clear-cdn",
+    title: "Clear CDN Cache",
+    category: "Networking",
+    estimatedMinutes: 8,
+    duration: "~8m",
+    lastRun: "2d ago",
+    successRate: "99%",
+    totalSteps: 2,
+    currentStep: 1,
+    serviceId: "svc-cdn",
+    serviceName: "Cloudflare Edge Cache",
+    description: "Purges edge cache tags for static assets and API schema endpoints globally.",
+    steps: [
+      { id: "s1", title: "Purge by cache tag", command: "curl -X POST https://api.cloudflare.com/client/v4/zones/$ZONE/purge_cache -H 'Authorization: Bearer $CF_TOKEN' -d '{\"tags\":[\"api-static\"]}'", expectedOutput: "{\"success\": true}", completed: true }
+    ]
+  },
+  {
+    id: "rb-validate-dns",
+    title: "Validate DNS Records",
+    category: "Networking",
+    estimatedMinutes: 3,
+    duration: "~3m",
+    lastRun: "5d ago",
+    successRate: "100%",
+    totalSteps: 2,
+    currentStep: 1,
+    serviceId: "svc-cdn",
+    serviceName: "Route53 Anycast",
+    description: "Checks Anycast propagation across 24 global edge resolvers with latency verification.",
+    steps: [
+      { id: "s1", title: "Verify propagation", command: "vigil dns check --domain vigil.dev --expected-cname edge.vigil.dev", expectedOutput: "All 24 regions resolved 100% matched.", completed: true }
+    ]
+  },
+  {
     id: "rb-envoy-drain",
-    title: "Envoy Sidecar Rollback & Connection Drain",
+    title: "Runbook: Envoy Proxy Pool Drain",
+    category: "Networking",
+    estimatedMinutes: 8,
+    duration: "~8m",
+    lastRun: "14m ago",
+    successRate: "95%",
+    totalSteps: 4,
+    currentStep: 1,
     serviceId: "svc-api-gw",
     serviceName: "API Gateway & Edge Routing",
-    estimatedMinutes: 8,
-    description: "Gracefully drains active HTTP/2 connections and safely rolls back Envoy ingress deployment to stable SHA.",
+    description: "Drain unhealthy proxies and restore pool.",
     steps: [
       {
-        id: "rb1-s1",
+        id: "s1",
         title: "Inspect Active Connection Pool Depth",
-        description: "Query active upstream socket connections across all ingress pods in namespace ingress-system.",
         command: "kubectl exec -n ingress-system deploy/envoy-gw -- envoy-admin -c 'stats --filter upstream_cx_active'",
+        expectedOutput: "upstream_cx_active: 4129 (Pool Saturation: 98%)",
         completed: true
       },
       {
-        id: "rb1-s2",
+        id: "s2",
         title: "Trigger Graceful Connection Drain",
-        description: "Instruct Envoy ingress listeners to stop accepting new requests and complete in-flight transactions within 30s.",
         command: "kubectl patch deployment envoy-gw -n ingress-system -p '{\"spec\":{\"template\":{\"metadata\":{\"annotations\":{\"drain-timeout\":\"30s\"}}}}}'",
-        completed: true
+        expectedOutput: "deployment.apps/envoy-gw patched. Drain timeout initiated.",
+        completed: false
       },
       {
-        id: "rb1-s3",
+        id: "s3",
         title: "Roll Back Ingress Deployment to Stable Tag",
-        description: "Execute roll back to prior verified deployment artifact v2.41.8.",
         command: "kubectl rollout undo deployment/envoy-gw -n ingress-system",
+        expectedOutput: "deployment.apps/envoy-gw rolled back to revision 41",
         completed: false
       },
       {
-        id: "rb1-s4",
+        id: "s4",
         title: "Verify Error Rate Restoration",
-        description: "Assert that 504 error rate across edge gateway drops below 0.01% over a 3-minute sample window.",
-        command: "vigil metric verify --service api-gateway --error-rate \"<0.01%\" --window 3m",
-        completed: false
-      }
-    ]
-  },
-  {
-    id: "rb-pg-failover",
-    title: "PostgreSQL Primary Failover & Standby Promotion",
-    serviceId: "svc-db",
-    serviceName: "Primary PostgreSQL Clustered DB",
-    estimatedMinutes: 12,
-    description: "Automated failover protocol using Patroni consensus to promote healthy read-replica with minimum replication lag.",
-    steps: [
-      {
-        id: "rb2-s1",
-        title: "Inspect Patroni Cluster Topology",
-        description: "Confirm health, timeline ID, and WAL replication lag on all standby candidates.",
-        command: "patronictl -c /etc/patroni/pg.yml topology",
-        completed: false
-      },
-      {
-        id: "rb2-s2",
-        title: "Pause Client Traffic on PgBouncer",
-        description: "Pause incoming transactional connection pools to prevent split-brain write buffers during promotion.",
-        command: "pgbouncer-admin -p 6432 -c 'PAUSE primary_pool'",
-        completed: false
-      },
-      {
-        id: "rb2-s3",
-        title: "Promote Standby Replica",
-        description: "Issue failover order to promote pg-replica-02 with zero data loss flag.",
-        command: "patronictl -c /etc/patroni/pg.yml failover --candidate pg-replica-02 --force",
-        completed: false
-      },
-      {
-        id: "rb2-s4",
-        title: "Resume Write Traffic and Assert Readiness",
-        description: "Resume PgBouncer connection pool and execute automated synthetic write validation probe.",
-        command: "pgbouncer-admin -p 6432 -c 'RESUME primary_pool' && vigil healthcheck run --target db-write-path",
-        completed: false
-      }
-    ]
-  },
-  {
-    id: "rb-stripe-reconcile",
-    title: "Stripe Webhook DLQ Flush & Throttled Replay",
-    serviceId: "svc-billing",
-    serviceName: "Billing & Stripe Webhook Sync",
-    estimatedMinutes: 15,
-    description: "Scales consumer workers, clears lock contention, and replays unhandled webhook payloads from the dead letter queue.",
-    steps: [
-      {
-        id: "rb3-s1",
-        title: "Inspect Dead Letter Queue Volume",
-        description: "Check approximate unconsumed event count in SQS dead letter queue.",
-        command: "aws sqs get-queue-attributes --queue-url $STRIPE_DLQ_URL --attribute-names ApproximateNumberOfMessages",
-        completed: false
-      },
-      {
-        id: "rb3-s2",
-        title: "Scale Worker Pool Replicas",
-        description: "Increase webhook consumer deployment replica count to handle re-drive burst.",
-        command: "kubectl scale deployment stripe-worker --replicas=12 -n payments",
-        completed: false
-      },
-      {
-        id: "rb3-s3",
-        title: "Replay Dead Letter Queue with Rate Limiting",
-        description: "Safely redeliver DLQ messages at a bounded rate of 150 events per second.",
-        command: "vigil queue replay --source stripe-dlq --rate 150 --max-attempts 3",
-        completed: false
-      },
-      {
-        id: "rb3-s4",
-        title: "Verify Inbound Sync Reconciliation",
-        description: "Confirm all subscriptions and payment intents match Stripe balance ledger.",
-        command: "vigil stripe verify-reconciliation --since-minutes 60",
+        command: "curl -I https://api.vigil.internal/healthz",
+        expectedOutput: "HTTP/2 200 OK\nLatency: 38ms",
         completed: false
       }
     ]
