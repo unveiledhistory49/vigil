@@ -15,8 +15,13 @@ import { OnboardingView } from "./components/OnboardingView.jsx";
 import { ServiceCatalogView } from "./components/ServiceCatalogView.jsx";
 import { PostMortemStudioView } from "./components/PostMortemStudioView.jsx";
 import { StatusPagePreview } from "./components/StatusPagePreview.jsx";
-import { CommandPalette } from "./components/CommandPalette.jsx";
-import { DeclareIncidentModal } from "./components/DeclareIncidentModal.jsx";
+import { DesktopLandingView } from "./components/DesktopLandingView.jsx";
+import { DesktopWarRoom } from "./components/DesktopWarRoom.jsx";
+import { DesktopIncidentsView } from "./components/DesktopIncidentsView.jsx";
+import { DesktopRunbooksView } from "./components/DesktopRunbooksView.jsx";
+import { DesktopOnboardingView } from "./components/DesktopOnboardingView.jsx";
+import { TopNav } from "./components/TopNav.jsx";
+import { Sidebar } from "./components/Sidebar.jsx";
 
 import { 
   AlertOctagon, 
@@ -28,10 +33,37 @@ import {
   ChevronDown,
   ExternalLink,
   Shield,
-  Building2
+  Building2,
+  Monitor,
+  Smartphone
 } from "lucide-react";
 
 export function App() {
+  // Viewport mode state: "desktop" | "mobile"
+  const [viewMode, setViewMode] = useState(() => {
+    if (typeof window !== "undefined") {
+      return window.innerWidth >= 1024 ? "desktop" : "mobile";
+    }
+    return "desktop";
+  });
+  const [userToggledMode, setUserToggledMode] = useState(false);
+
+  // Resize listener
+  useEffect(() => {
+    const handleResize = () => {
+      if (!userToggledMode && typeof window !== "undefined") {
+        setViewMode(window.innerWidth >= 1024 ? "desktop" : "mobile");
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [userToggledMode]);
+
+  const toggleViewMode = () => {
+    setUserToggledMode(true);
+    setViewMode(prev => prev === "desktop" ? "mobile" : "desktop");
+  };
+
   // Navigation & View State
   const [currentView, setCurrentView] = useState("landing"); // "landing" | "app"
   const [currentTab, setCurrentTab] = useState("incidents"); // "incidents" | "services" | "runbooks" | "retros" | "onboarding" | "status"
@@ -156,7 +188,168 @@ export function App() {
   };
 
   const activeIncidentsCount = incidents.filter(i => i.status !== "resolved").length;
+  const degradedServicesCount = services.filter(s => s.status !== "healthy").length;
 
+  // DEDICATED DESKTOP VIEWPORT
+  if (viewMode === "desktop") {
+    return (
+      <div className="app-root-desktop">
+        {currentView === "landing" ? (
+          <DesktopLandingView 
+            onLaunchApp={() => {
+              setCurrentView("app");
+              setCurrentTab("incidents");
+              setSelectedIncident(null);
+            }}
+            onSimulateIncident={handleSimulateIncident}
+            onOpenIncident={(incId) => {
+              setCurrentView("app");
+              setCurrentTab("incidents");
+              const found = incidents.find(i => i.id === incId);
+              if (found) setSelectedIncident(found);
+            }}
+            onOpenFeature={(feature) => {
+              setCurrentView("app");
+              if (feature === "runbooks") setCurrentTab("runbooks");
+              else if (feature === "services") setCurrentTab("services");
+              else if (feature === "retros") setCurrentTab("retros");
+              else if (feature === "onboarding") setCurrentTab("onboarding");
+              setSelectedIncident(null);
+            }}
+            onSwitchToMobile={toggleViewMode}
+          />
+        ) : (
+          <div className="app-layout desktop-shell">
+            <TopNav 
+              currentView={currentView}
+              setCurrentView={setCurrentView}
+              onOpenCmdPalette={() => setIsCmdPaletteOpen(true)}
+              onOpenDeclareModal={() => setIsDeclareModalOpen(true)}
+              activeIncidentsCount={activeIncidentsCount}
+              onSelectActiveIncident={() => {
+                setCurrentTab("incidents");
+                const p0 = incidents.find(i => i.id === "INC-409");
+                if (p0) setSelectedIncident(p0);
+              }}
+              onToggleViewMode={toggleViewMode}
+            />
+
+            <div className="app-body">
+              <Sidebar 
+                currentTab={currentTab}
+                setCurrentTab={(tab) => {
+                  setCurrentTab(tab);
+                  setSelectedIncident(null);
+                }}
+                activeFilter={activeFilter}
+                setActiveFilter={setActiveFilter}
+                activeIncidentsCount={activeIncidentsCount}
+                degradedServicesCount={degradedServicesCount}
+                onToggleViewMode={toggleViewMode}
+              />
+
+              <main className="app-main">
+                {selectedIncident ? (
+                  <DesktopWarRoom 
+                    incident={selectedIncident}
+                    onClose={() => setSelectedIncident(null)}
+                    onUpdateSeverity={handleUpdateSeverity}
+                    onUpdateStatus={handleUpdateStatus}
+                    onAddTimelineEntry={handleAddTimelineEntry}
+                    onOpenRunbook={handleOpenRunbook}
+                  />
+                ) : (
+                  <>
+                    {currentTab === "incidents" && (
+                      <DesktopIncidentsView 
+                        incidents={incidents}
+                        onSelectIncident={(inc) => setSelectedIncident(inc)}
+                        activeFilter={activeFilter}
+                        setActiveFilter={setActiveFilter}
+                        displayMode={displayMode}
+                        setDisplayMode={setDisplayMode}
+                        onDeclareIncident={() => setIsDeclareModalOpen(true)}
+                        onOpenRunbook={handleOpenRunbook}
+                      />
+                    )}
+
+                    {currentTab === "services" && (
+                      <ServiceCatalogView 
+                        services={services}
+                        onDeclareForService={() => setIsDeclareModalOpen(true)}
+                      />
+                    )}
+
+                    {currentTab === "runbooks" && (
+                      <DesktopRunbooksView 
+                        runbooks={runbooks}
+                        selectedRunbookId={selectedRunbookId}
+                        onSelectRunbook={(id) => setSelectedRunbookId(id)}
+                      />
+                    )}
+
+                    {currentTab === "retros" && (
+                      <PostMortemStudioView 
+                        postmortems={postmortems}
+                        onToggleActionItem={handleToggleActionItem}
+                        onAddActionItem={handleAddActionItem}
+                      />
+                    )}
+
+                    {currentTab === "onboarding" && (
+                      <DesktopOnboardingView 
+                        onComplete={() => {
+                          setCurrentTab("incidents");
+                          setSelectedIncident(null);
+                        }}
+                      />
+                    )}
+
+                    {currentTab === "status" && (
+                      <StatusPagePreview 
+                        incidents={incidents}
+                        services={services}
+                        onBack={() => setCurrentTab("incidents")}
+                      />
+                    )}
+                  </>
+                )}
+              </main>
+            </div>
+          </div>
+        )}
+
+        {/* Global Command Palette (⌘K) */}
+        <CommandPalette 
+          isOpen={isCmdPaletteOpen}
+          onClose={() => setIsCmdPaletteOpen(false)}
+          onNavigate={(tab) => {
+            setCurrentView("app");
+            setCurrentTab(tab);
+            setSelectedIncident(null);
+          }}
+          onSelectIncident={(inc) => {
+            setCurrentView("app");
+            setSelectedIncident(inc);
+          }}
+          onSelectRunbook={handleOpenRunbook}
+          incidents={incidents}
+          services={services}
+          runbooks={runbooks}
+        />
+
+        {/* Declare Incident Modal (C) */}
+        <DeclareIncidentModal 
+          isOpen={isDeclareModalOpen}
+          onClose={() => setIsDeclareModalOpen(false)}
+          onDeclare={handleDeclareIncident}
+          services={services}
+        />
+      </div>
+    );
+  }
+
+  // DEDICATED MOBILE VIEWPORT (Mobile Artboards 1 to 6)
   return (
     <div className="app-root-shell">
       {/* Main Viewport Container */}
@@ -409,6 +602,16 @@ export function App() {
                     >
                       <span>Product Overview</span>
                       <ExternalLink size={14} />
+                    </button>
+                    <button 
+                      className="more-sheet-row"
+                      onClick={() => {
+                        setIsMoreSheetOpen(false);
+                        toggleViewMode();
+                      }}
+                    >
+                      <span>Switch to Desktop View</span>
+                      <Monitor size={14} />
                     </button>
                   </div>
                 </div>

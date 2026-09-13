@@ -5,7 +5,8 @@ import {
   Plus, 
   Radio, 
   ExternalLink,
-  ChevronDown
+  ChevronDown,
+  Smartphone
 } from "lucide-react";
 
 export function TopNav({ 
@@ -14,7 +15,8 @@ export function TopNav({
   onOpenCmdPalette, 
   onOpenDeclareModal, 
   activeIncidentsCount,
-  onSelectActiveIncident 
+  onSelectActiveIncident,
+  onToggleViewMode 
 }) {
   return (
     <header className="app-topbar">
@@ -156,6 +158,27 @@ export function TopNav({
             Landing
           </button>
         </div>
+
+        {/* Switch to Mobile View Button */}
+        <button
+          onClick={onToggleViewMode}
+          className="btn btn-ghost hide-on-mobile"
+          style={{
+            height: "28px",
+            padding: "0 8px",
+            fontSize: "11px",
+            display: "flex",
+            alignItems: "center",
+            gap: "5px",
+            border: "1px solid var(--color-border-primary)",
+            borderRadius: "var(--radius-md)",
+            color: "var(--color-text-secondary)"
+          }}
+          title="Switch to 390px Mobile Artboards"
+        >
+          <Smartphone size={13} />
+          <span>Mobile View</span>
+        </button>
 
         {/* Declare Incident Button */}
         <button 

@@ -7,10 +7,12 @@ import {
   Radio, 
   Filter, 
   CheckCircle2, 
-  Flame,
-  ChevronDown,
-  Layers,
-  CircleDot
+  Flame, 
+  ChevronDown, 
+  Layers, 
+  CircleDot,
+  Zap,
+  Smartphone
 } from "lucide-react";
 
 export function Sidebar({ 
@@ -19,7 +21,8 @@ export function Sidebar({
   activeFilter, 
   setActiveFilter, 
   activeIncidentsCount, 
-  degradedServicesCount 
+  degradedServicesCount,
+  onToggleViewMode
 }) {
   return (
     <aside className="app-sidebar">
@@ -120,6 +123,20 @@ export function Sidebar({
           <span className="sidebar-count-badge">2</span>
         </div>
 
+        {/* Integrations Nav */}
+        <div 
+          className={`sidebar-nav-item ${currentTab === "onboarding" ? "active" : ""}`}
+          onClick={() => setCurrentTab("onboarding")}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "9px" }}>
+            <Zap size={14} />
+            <span>Integrations</span>
+          </div>
+          <span className="sidebar-count-badge" style={{ background: "rgba(113, 135, 251, 0.12)", color: "#7187fb" }}>
+            Setup
+          </span>
+        </div>
+
         {/* Public Status Page */}
         <div 
           className={`sidebar-nav-item ${currentTab === "status" ? "active" : ""}`}
@@ -186,6 +203,32 @@ export function Sidebar({
             </div>
           </>
         )}
+      </div>
+
+      {/* Switch to Mobile View Action */}
+      <div style={{ 
+        padding: "8px 12px", 
+        borderTop: "1px solid var(--color-border-primary)",
+        background: "rgba(0,0,0,0.15)"
+      }}>
+        <button
+          onClick={onToggleViewMode}
+          className="btn btn-ghost"
+          style={{
+            width: "100%",
+            justifyContent: "flex-start",
+            gap: "8px",
+            fontSize: "11.5px",
+            color: "var(--color-text-secondary)",
+            height: "28px",
+            padding: "0 8px",
+            borderRadius: "var(--radius-md)"
+          }}
+          title="Preview 390px Mobile Artboards"
+        >
+          <Smartphone size={13} />
+          <span>Switch to Mobile View</span>
+        </button>
       </div>
 
       {/* On-Call Engineer Status at Bottom */}
