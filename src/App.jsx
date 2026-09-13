@@ -26,8 +26,6 @@ import {
   MoreHorizontal, 
   Search, 
   ChevronDown,
-  Smartphone,
-  Monitor,
   ExternalLink,
   Shield,
   Building2
@@ -35,11 +33,10 @@ import {
 
 export function App() {
   // Navigation & View State
-  const [currentView, setCurrentView] = useState("app"); // "landing" | "app"
+  const [currentView, setCurrentView] = useState("landing"); // "landing" | "app"
   const [currentTab, setCurrentTab] = useState("incidents"); // "incidents" | "services" | "runbooks" | "retros" | "onboarding" | "status"
   const [displayMode, setDisplayMode] = useState("list"); // "list" | "board"
   const [activeFilter, setActiveFilter] = useState("all"); // "all" | "assigned" | "p0" | "resolved"
-  const [isMobileFrame, setIsMobileFrame] = useState(false); // Mobile frame toggle for desktop reviewers
 
   // Data State
   const [incidents, setIncidents] = useState(INITIAL_INCIDENTS);
@@ -158,131 +155,25 @@ export function App() {
     if (p0) setSelectedIncident(p0);
   };
 
-  // Jump helpers to verify each artboard screen instantly
-  const jumpToScreen = (screenNum) => {
-    switch (screenNum) {
-      case 1:
-        setCurrentView("landing");
-        setSelectedIncident(null);
-        break;
-      case 2:
-        setCurrentView("app");
-        setCurrentTab("incidents");
-        setSelectedIncident(null);
-        setDisplayMode("list");
-        break;
-      case 3:
-        setCurrentView("app");
-        setCurrentTab("incidents");
-        const p0 = incidents.find(i => i.id === "INC-409") || incidents[0];
-        setSelectedIncident(p0);
-        break;
-      case 4:
-        setCurrentView("app");
-        setCurrentTab("runbooks");
-        setSelectedIncident(null);
-        break;
-      case 5:
-        setCurrentView("app");
-        setCurrentTab("runbooks");
-        setSelectedRunbookId("rb-restart-lb");
-        setSelectedIncident(null);
-        break;
-      case 6:
-        setCurrentView("app");
-        setCurrentTab("onboarding");
-        setSelectedIncident(null);
-        break;
-      default:
-        break;
-    }
-  };
-
   const activeIncidentsCount = incidents.filter(i => i.status !== "resolved").length;
 
   return (
-    <div className={`app-root-shell ${isMobileFrame ? "frame-mode" : "full-mode"}`}>
-      {/* Top Engineering Review Bar: Quick jump between mockups & view modes */}
-      <div className="artboard-director-toolbar">
-        <div className="director-left">
-          <span className="director-title">Vigil Artboards:</span>
-          <div className="artboard-pills-selector">
-            <button 
-              className={`artboard-pill-btn ${currentView === "landing" ? "active" : ""}`}
-              onClick={() => jumpToScreen(1)}
-            >
-              1: Landing
-            </button>
-            <button 
-              className={`artboard-pill-btn ${currentView === "app" && currentTab === "incidents" && !selectedIncident ? "active" : ""}`}
-              onClick={() => jumpToScreen(2)}
-            >
-              2: Incidents
-            </button>
-            <button 
-              className={`artboard-pill-btn ${currentView === "app" && selectedIncident?.id === "INC-409" ? "active" : ""}`}
-              onClick={() => jumpToScreen(3)}
-            >
-              3: Command Room
-            </button>
-            <button 
-              className={`artboard-pill-btn ${currentView === "app" && currentTab === "runbooks" ? "active" : ""}`}
-              onClick={() => jumpToScreen(4)}
-            >
-              4: Runbooks
-            </button>
-            <button 
-              className={`artboard-pill-btn ${currentView === "app" && currentTab === "onboarding" ? "active" : ""}`}
-              onClick={() => jumpToScreen(6)}
-            >
-              6: Onboarding
-            </button>
-          </div>
-        </div>
-
-        <div className="director-right">
-          <button 
-            className={`frame-toggle-btn ${isMobileFrame ? "active" : ""}`}
-            onClick={() => setIsMobileFrame(!isMobileFrame)}
-            title="Toggle 390px Mobile Artboard Mockup Frame"
-          >
-            {isMobileFrame ? <Monitor size={14} /> : <Smartphone size={14} />}
-            <span>{isMobileFrame ? "Desktop View" : "Mobile Frame"}</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Main Container / Mobile Device Frame */}
+    <div className="app-root-shell">
+      {/* Main Viewport Container */}
       <div className="device-viewport-container">
-        {/* If Mobile Frame Mode is enabled, render the authentic 9:41 mobile status bar */}
-        {isMobileFrame && (
-          <div className="mobile-statusbar">
-            <span className="statusbar-time">9:41</span>
-            <div className="statusbar-icons">
-              <svg width="16" height="11" viewBox="0 0 17 11" fill="currentColor">
-                <rect x="0" y="7" width="3" height="4" rx="0.5"/>
-                <rect x="4.5" y="5" width="3" height="6" rx="0.5"/>
-                <rect x="9" y="2.5" width="3" height="8.5" rx="0.5"/>
-                <rect x="13.5" y="0" width="3" height="11" rx="0.5"/>
-              </svg>
-              <svg width="15" height="11" viewBox="0 0 16 12" fill="currentColor">
-                <path d="M8 2.8C5.5 2.8 3.3 3.8 1.6 5.4L0 3.8C2.1 1.7 5 0.4 8 0.4s5.9 1.3 8 3.4l-1.6 1.6C12.7 3.8 10.5 2.8 8 2.8zm0 4.8c-1.4 0-2.6.6-3.5 1.5L8 12l3.5-2.9C10.6 8.2 9.4 7.6 8 7.6z"/>
-              </svg>
-              <svg width="22" height="11" viewBox="0 0 25 12" fill="currentColor">
-                <rect x="0.5" y="0.5" width="21" height="11" rx="3.5" stroke="currentColor" fill="none"/>
-                <rect x="2" y="2" width="18" height="8" rx="2"/>
-                <path d="M23 4v4c.8-.4 1.3-1.1 1.3-2s-.5-1.6-1.3-2z"/>
-              </svg>
-            </div>
-          </div>
-        )}
-
         {/* VIEW 1: LANDING PAGE (Screen 1) */}
         {currentView === "landing" ? (
           <LandingPage 
             onLaunchApp={() => {
               setCurrentView("app");
               setCurrentTab("incidents");
+              setSelectedIncident(null);
+            }}
+            onOpenIncident={(incId) => {
+              setCurrentView("app");
+              setCurrentTab("incidents");
+              const found = incidents.find(i => i.id === incId);
+              if (found) setSelectedIncident(found);
             }}
             onSimulateIncident={handleSimulateIncident}
             onOpenFeature={(feature) => {
@@ -495,8 +386,8 @@ export function App() {
                         setSelectedIncident(null);
                       }}
                     >
-                      <span>Onboarding Setup (Screen 6)</span>
-                      <span className="pill-status">3-Step</span>
+                      <span>Onboarding & Integrations</span>
+                      <span className="pill-status">Setup</span>
                     </button>
                     <button 
                       className="more-sheet-row"
@@ -516,7 +407,7 @@ export function App() {
                         setCurrentView("landing");
                       }}
                     >
-                      <span>Marketing Landing (Screen 1)</span>
+                      <span>Product Overview</span>
                       <ExternalLink size={14} />
                     </button>
                   </div>
@@ -537,9 +428,6 @@ export function App() {
             )}
           </div>
         )}
-
-        {/* If Mobile Frame Mode, render the bottom home bar indicator */}
-        {isMobileFrame && <div className="mobile-home-indicator" />}
       </div>
 
       {/* Global Command Palette (⌘K) */}

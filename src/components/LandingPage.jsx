@@ -8,7 +8,7 @@ import {
   X
 } from "lucide-react";
 
-export function LandingPage({ onLaunchApp, onSimulateIncident, onOpenFeature }) {
+export function LandingPage({ onLaunchApp, onSimulateIncident, onOpenFeature, onOpenIncident }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [simulatedAlert, setSimulatedAlert] = useState(false);
 
@@ -106,7 +106,10 @@ export function LandingPage({ onLaunchApp, onSimulateIncident, onOpenFeature }) 
         {/* Hero Card: Real-time Incident Preview */}
         <div 
           className="artboard-incident-card"
-          onClick={onLaunchApp}
+          onClick={() => {
+            if (onOpenIncident) onOpenIncident("INC-409");
+            else onLaunchApp();
+          }}
           title="Click to enter INC-409 War Room"
         >
           <div className="card-top-row">
