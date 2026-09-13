@@ -12,7 +12,9 @@ import {
   Command, 
   Play, 
   Layers,
-  ChevronRight
+  ChevronRight,
+  Activity,
+  Cpu
 } from "lucide-react";
 
 export function LandingPage({ onLaunchApp, onSimulateIncident }) {
@@ -182,29 +184,9 @@ export function LandingPage({ onLaunchApp, onSimulateIncident }) {
 
           {/* Hero Body Split: Telemetry visual + Incident Matrix */}
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))" }}>
-            {/* Left: Telemetry Radar Image */}
+            {/* Left: Telemetry Radar Visualizer */}
             <div style={{ position: "relative", minHeight: "260px", overflow: "hidden", borderRight: "1px solid var(--color-border-primary)" }}>
-              <img 
-                src="./images/telemetry_card.jpg" 
-                alt="Vigil Real-time Telemetry Dashboard" 
-                style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", opacity: 0.9 }}
-              />
-              <div style={{
-                position: "absolute",
-                inset: 0,
-                background: "linear-gradient(to top, rgba(15,16,17,0.9) 0%, transparent 60%)",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "flex-end",
-                padding: "20px"
-              }}>
-                <div style={{ fontSize: "11px", color: "var(--color-accent)", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 600 }}>
-                  Real-Time Edge Telemetry
-                </div>
-                <div style={{ fontSize: "15px", fontWeight: 600, color: "#fff", marginTop: "2px" }}>
-                  Ingress 504 Threshold Breach: 4,210ms P99
-                </div>
-              </div>
+              <TelemetryWaveformVisualizer />
             </div>
 
             {/* Right: Live Triage Feed */}
@@ -380,13 +362,7 @@ export function LandingPage({ onLaunchApp, onSimulateIncident }) {
             </button>
           </div>
 
-          <div style={{ borderRadius: "var(--radius-lg)", overflow: "hidden", border: "1px solid var(--color-border-primary)" }}>
-            <img
-              src="./images/hero_infra.jpg"
-              alt="Vigil Bare-Metal Cloud Infrastructure Node"
-              style={{ width: "100%", height: "260px", objectFit: "cover", display: "block" }}
-            />
-          </div>
+          <MeshTopologyVisualizer />
         </div>
       </section>
 
@@ -412,6 +388,247 @@ export function LandingPage({ onLaunchApp, onSimulateIncident }) {
           <kbd style={{ marginLeft: "4px", background: "rgba(255,255,255,0.2)", color: "#fff", borderColor: "rgba(255,255,255,0.3)" }}>⌘K</kbd>
         </button>
       </footer>
+    </div>
+  );
+}
+
+function TelemetryWaveformVisualizer() {
+  return (
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      height: "100%",
+      minHeight: "280px",
+      padding: "16px",
+      background: "linear-gradient(180deg, #0e0f13 0%, #08090b 100%)",
+      justifyContent: "space-between"
+    }}>
+      {/* Header telemetry info */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span className="pulse-red" style={{ width: "7px", height: "7px", borderRadius: "50%", background: "var(--color-red)" }} />
+          <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.06em", color: "var(--color-text-secondary)", fontFamily: "var(--font-mono)", textTransform: "uppercase" }}>
+            Ingress Latency P99
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ fontSize: "10px", color: "var(--color-text-quaternary)", fontFamily: "var(--font-mono)" }}>SLO: 2,500ms</span>
+          <span className="badge badge-p0" style={{ fontSize: "10px", padding: "1px 6px" }}>BREACH</span>
+        </div>
+      </div>
+
+      {/* SVG Waveform Graph */}
+      <div style={{ position: "relative", flex: 1, minHeight: "150px", marginTop: "8px" }}>
+        <svg 
+          viewBox="0 0 420 180" 
+          preserveAspectRatio="none" 
+          style={{ width: "100%", height: "100%", overflow: "visible" }}
+        >
+          <defs>
+            <linearGradient id="waveform-area-grad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#eb5757" stopOpacity="0.4" />
+              <stop offset="50%" stopColor="#f2994a" stopOpacity="0.15" />
+              <stop offset="100%" stopColor="#5e6ad2" stopOpacity="0.0" />
+            </linearGradient>
+            <linearGradient id="waveform-stroke-grad" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="#5e6ad2" />
+              <stop offset="55%" stopColor="#5e6ad2" />
+              <stop offset="70%" stopColor="#f2994a" />
+              <stop offset="85%" stopColor="#eb5757" />
+              <stop offset="100%" stopColor="#eb5757" />
+            </linearGradient>
+            <filter id="glow-breach" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+          </defs>
+
+          {/* Background Grid Lines */}
+          <line x1="0" y1="30" x2="420" y2="30" stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
+          <line x1="0" y1="70" x2="420" y2="70" stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
+          <line x1="0" y1="110" x2="420" y2="110" stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
+          <line x1="0" y1="150" x2="420" y2="150" stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />
+
+          {/* SLO Threshold Line (2500ms at y=80) */}
+          <line x1="0" y1="80" x2="420" y2="80" stroke="#f2994a" strokeWidth="1.2" strokeDasharray="4 4" opacity="0.8" />
+          <text x="6" y="74" fill="#f2994a" fontSize="9" fontFamily="var(--font-mono)" opacity="0.9">
+            SLO CEILING (2,500ms)
+          </text>
+
+          {/* Area under curve */}
+          <path
+            d="M 0 148 
+               C 30 145, 60 152, 90 146 
+               C 120 140, 150 149, 180 144 
+               C 210 138, 240 142, 270 130 
+               C 290 120, 310 85, 335 48 
+               C 350 25, 365 20, 380 22 
+               C 395 24, 405 32, 420 28 
+               L 420 180 L 0 180 Z"
+            fill="url(#waveform-area-grad)"
+          />
+
+          {/* Main Waveform Stroke */}
+          <path
+            d="M 0 148 
+               C 30 145, 60 152, 90 146 
+               C 120 140, 150 149, 180 144 
+               C 210 138, 240 142, 270 130 
+               C 290 120, 310 85, 335 48 
+               C 350 25, 365 20, 380 22 
+               C 395 24, 405 32, 420 28"
+            fill="none"
+            stroke="url(#waveform-stroke-grad)"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+
+          {/* Breach Anomaly Peak Pin */}
+          <line x1="365" y1="20" x2="365" y2="180" stroke="rgba(235, 87, 87, 0.4)" strokeWidth="1" strokeDasharray="2 2" />
+          <circle cx="365" cy="20" r="8" fill="rgba(235, 87, 87, 0.25)" className="pulse-red" />
+          <circle cx="365" cy="20" r="4" fill="#eb5757" filter="url(#glow-breach)" />
+
+          {/* Anomaly Callout Card */}
+          <g transform="translate(268, 6)">
+            <rect width="90" height="24" rx="4" fill="#141518" stroke="#eb5757" strokeWidth="1" />
+            <text x="45" y="16" textAnchor="middle" fill="#f7f8f8" fontSize="10" fontWeight="700" fontFamily="var(--font-mono)">
+              4,210ms P99
+            </text>
+          </g>
+
+          {/* X Axis Time Labels */}
+          <text x="10" y="172" fill="#62666d" fontSize="9" fontFamily="var(--font-mono)">-60s</text>
+          <text x="110" y="172" fill="#62666d" fontSize="9" fontFamily="var(--font-mono)">-45s</text>
+          <text x="210" y="172" fill="#62666d" fontSize="9" fontFamily="var(--font-mono)">-30s</text>
+          <text x="310" y="172" fill="#62666d" fontSize="9" fontFamily="var(--font-mono)">-15s</text>
+          <text x="390" y="172" fill="#eb5757" fontSize="9" fontFamily="var(--font-mono)" fontWeight="600">NOW</text>
+        </svg>
+      </div>
+
+      {/* Real-time telemetry summary bar */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px", paddingTop: "12px", borderTop: "1px solid var(--color-border-primary)", marginTop: "8px" }}>
+        <div>
+          <div style={{ fontSize: "10px", color: "var(--color-text-quaternary)", fontFamily: "var(--font-mono)" }}>EDGE THROUGHPUT</div>
+          <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-text-primary)", fontFamily: "var(--font-mono)", marginTop: "2px" }}>84.2k req/s</div>
+        </div>
+        <div>
+          <div style={{ fontSize: "10px", color: "var(--color-text-quaternary)", fontFamily: "var(--font-mono)" }}>ERROR RATE (504)</div>
+          <div style={{ fontSize: "12px", fontWeight: 600, color: "#ff7878", fontFamily: "var(--font-mono)", marginTop: "2px" }}>8.42% <span style={{ fontSize: "10px" }}>▲</span></div>
+        </div>
+        <div>
+          <div style={{ fontSize: "10px", color: "var(--color-text-quaternary)", fontFamily: "var(--font-mono)" }}>ROOT NODE</div>
+          <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-text-secondary)", fontFamily: "var(--font-mono)", marginTop: "2px" }}>envoy-ingress-01</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MeshTopologyVisualizer() {
+  return (
+    <div style={{
+      borderRadius: "var(--radius-lg)",
+      overflow: "hidden",
+      border: "1px solid var(--color-border-primary)",
+      background: "radial-gradient(ellipse 90% 70% at 50% 20%, #111218 0%, #08090b 100%)",
+      padding: "20px",
+      position: "relative"
+    }}>
+      {/* Topology Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <Layers size={13} color="var(--color-accent)" />
+          <span style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.06em", color: "var(--color-text-secondary)", textTransform: "uppercase", fontFamily: "var(--font-mono)" }}>
+            Live Autonomous Service Mesh Map
+          </span>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <span style={{ width: "6px", height: "6px", borderRadius: "50%", background: "#27ae60" }} />
+          <span style={{ fontSize: "11px", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)" }}>
+            14 Services • 2 Degradations
+          </span>
+        </div>
+      </div>
+
+      {/* SVG Mesh Graph */}
+      <div style={{ width: "100%", height: "230px" }}>
+        <svg viewBox="0 0 520 220" style={{ width: "100%", height: "100%", overflow: "visible" }}>
+          {/* Connecting Edge Paths */}
+          {/* Edge -> Envoy */}
+          <path d="M 125 110 C 155 110, 155 65, 185 65" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
+          <path d="M 125 110 C 155 110, 155 65, 185 65" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeDasharray="5 10" className="flow-stream" />
+
+          {/* Edge -> Event Bus */}
+          <path d="M 125 110 C 155 110, 155 155, 185 155" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
+          <path d="M 125 110 C 155 110, 155 155, 185 155" fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeDasharray="5 10" className="flow-stream" />
+
+          {/* Envoy -> Auth Cluster */}
+          <path d="M 315 65 C 340 65, 340 40, 365 40" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
+          <path d="M 315 65 C 340 65, 340 40, 365 40" fill="none" stroke="#27ae60" strokeWidth="2" strokeDasharray="4 8" className="flow-stream" />
+
+          {/* Envoy -> Patroni PostgreSQL (Bottlenecked Link) */}
+          <path d="M 315 65 C 340 65, 340 105, 365 105" fill="none" stroke="#eb5757" strokeWidth="1.8" opacity="0.6" />
+          <path d="M 315 65 C 340 65, 340 105, 365 105" fill="none" stroke="#eb5757" strokeWidth="2.5" strokeDasharray="4 6" className="flow-stream-fast" />
+
+          {/* Event Bus -> Kafka Cluster */}
+          <path d="M 315 155 C 340 155, 340 170, 365 170" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1.5" />
+          <path d="M 315 155 C 340 155, 340 170, 365 170" fill="none" stroke="#5e6ad2" strokeWidth="2" strokeDasharray="5 10" className="flow-stream" />
+
+          {/* NODE 1: Anycast Gateway */}
+          <g transform="translate(10, 85)">
+            <rect width="115" height="50" rx="6" fill="#141517" stroke="rgba(255,255,255,0.14)" strokeWidth="1" />
+            <circle cx="20" cy="18" r="4" fill="#27ae60" />
+            <text x="32" y="21" fill="#f7f8f8" fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Anycast Edge</text>
+            <text x="20" y="38" fill="#8a8f98" fontSize="9" fontFamily="var(--font-mono)">1.2ms • 100% OK</text>
+          </g>
+
+          {/* NODE 2: Envoy Mesh Router */}
+          <g transform="translate(185, 40)">
+            <rect width="130" height="50" rx="6" fill="#141517" stroke="rgba(242, 153, 74, 0.45)" strokeWidth="1" />
+            <circle cx="20" cy="18" r="4" fill="#f2994a" />
+            <text x="32" y="21" fill="#f7f8f8" fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Envoy Ingress</text>
+            <text x="20" y="38" fill="#ffaa55" fontSize="9" fontFamily="var(--font-mono)">504 High Saturation</text>
+          </g>
+
+          {/* NODE 3: Event Broker */}
+          <g transform="translate(185, 130)">
+            <rect width="130" height="50" rx="6" fill="#141517" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+            <circle cx="20" cy="18" r="4" fill="#27ae60" />
+            <text x="32" y="21" fill="#f7f8f8" fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Internal Bus</text>
+            <text x="20" y="38" fill="#8a8f98" fontSize="9" fontFamily="var(--font-mono)">gRPC • 0.8ms</text>
+          </g>
+
+          {/* NODE 4: Auth Service */}
+          <g transform="translate(365, 15)">
+            <rect width="145" height="48" rx="6" fill="#141517" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+            <circle cx="18" cy="18" r="4" fill="#27ae60" />
+            <text x="30" y="21" fill="#f7f8f8" fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Auth & Session</text>
+            <text x="18" y="36" fill="#8a8f98" fontSize="9" fontFamily="var(--font-mono)">v2.14 • 99.99%</text>
+          </g>
+
+          {/* NODE 5: Patroni PostgreSQL (Spike Point) */}
+          <g transform="translate(365, 80)">
+            <rect width="145" height="50" rx="6" fill="#1b1214" stroke="#eb5757" strokeWidth="1.2" />
+            <circle cx="18" cy="18" r="5" fill="#eb5757" className="pulse-red" />
+            <text x="30" y="21" fill="#ff8888" fontSize="11" fontWeight="700" fontFamily="var(--font-sans)">Patroni Postgres</text>
+            <text x="18" y="38" fill="#ff7878" fontSize="9" fontFamily="var(--font-mono)" fontWeight="600">CONN POOL 100%</text>
+          </g>
+
+          {/* NODE 6: Kafka Events */}
+          <g transform="translate(365, 145)">
+            <rect width="145" height="48" rx="6" fill="#141517" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+            <circle cx="18" cy="18" r="4" fill="#27ae60" />
+            <text x="30" y="21" fill="#f7f8f8" fontSize="11" fontWeight="600" fontFamily="var(--font-sans)">Kafka Partition Bus</text>
+            <text x="18" y="36" fill="#8a8f98" fontSize="9" fontFamily="var(--font-mono)">0 Lag • 24 Shards</text>
+          </g>
+        </svg>
+      </div>
+
+      {/* Mesh Footer Detail */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", paddingTop: "12px", borderTop: "1px solid var(--color-border-primary)", fontSize: "11px", color: "var(--color-text-tertiary)", fontFamily: "var(--font-mono)" }}>
+        <div>Source: git commit #8f1b40c</div>
+        <div style={{ color: "#ff8888" }}>Blast Radius: 4 Upstream Dependents</div>
+      </div>
     </div>
   );
 }

@@ -177,6 +177,21 @@ kbd {
   animation: pulse-dot 2s infinite;
 }
 
+/* Streaming vector flow animations for service topology */
+@keyframes flow-dash {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+
+.flow-stream {
+  animation: flow-dash 1.8s linear infinite;
+}
+
+.flow-stream-fast {
+  animation: flow-dash 0.75s linear infinite;
+}
+
 /* Badges */
 .badge {
   display: inline-flex;

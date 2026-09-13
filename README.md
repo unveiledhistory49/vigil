@@ -109,7 +109,7 @@ Vigil adopts the visual and ergonomic standards of Linear's design system:
 | **UI Framework** | [React 19](https://react.dev) | Modern concurrent rendering, clean state primitives, and predictable hooks. |
 | **Icons** | [Lucide React](https://lucide.dev) | Crisp, uniform iconography matching modern developer tools. |
 | **Styling** | Custom Pure CSS Tokens | Zero runtime CSS-in-JS overhead, hardware-accelerated animations. |
-| **Visual Assets** | Pollinations AI | Minimalist dark hardware blade and telemetry radar visuals generated with Flux. |
+| **Visual Systems** | Bespoke Pure SVG Architecture | Zero-raster telemetry waveforms, real-time animated service mesh graphs, and vector iconography. |
 
 ---
 
