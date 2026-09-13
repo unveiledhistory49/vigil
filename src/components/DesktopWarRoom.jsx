@@ -18,7 +18,8 @@ import {
   Server,
   Play,
   CheckCircle2,
-  Share2
+  Share2,
+  Activity
 } from "lucide-react";
 
 export function DesktopWarRoom({ 

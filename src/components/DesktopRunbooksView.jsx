@@ -54,7 +54,7 @@ export function DesktopRunbooksView({
     setIsExecuting(true);
     setTimeout(() => {
       setIsExecuting(false);
-      const allStepNums = activeRunbook.steps.map(s => s.step);
+      const allStepNums = activeRunbook.steps?.map((s, idx) => s.step || (idx + 1)) || [];
       const nextStep = allStepNums.find(n => !completedSteps.includes(n));
       if (nextStep) {
         setCompletedSteps(prev => [...prev, nextStep]);
@@ -219,26 +219,29 @@ export function DesktopRunbooksView({
 
         {/* Interactive Steps List */}
         <div className="execution-steps-stream">
-          {activeRunbook.steps?.map((stepItem) => {
-            const isCompleted = completedSteps.includes(stepItem.step);
+          {activeRunbook.steps?.map((stepItem, idx) => {
+            const stepNum = stepItem.step || (idx + 1);
+            const stepKey = stepItem.id || `step-${stepNum}`;
+            const stepTitle = stepItem.instruction || stepItem.title || `Execute Step ${stepNum}`;
+            const isCompleted = completedSteps.includes(stepNum);
 
             return (
               <div 
-                key={stepItem.step}
+                key={stepKey}
                 className={`execution-step-card ${isCompleted ? "step-done" : ""}`}
               >
                 <div className="step-card-header">
                   <button 
                     type="button" 
                     className={`step-card-checkbox ${isCompleted ? "checked" : ""}`}
-                    onClick={() => handleToggleStep(stepItem.step)}
+                    onClick={() => handleToggleStep(stepNum)}
                   >
                     {isCompleted && <Check size={13} color="#ffffff" />}
                   </button>
 
                   <div className="step-card-title-wrap">
-                    <span className="step-number-tag">Step {stepItem.step}</span>
-                    <h3 className="step-instruction-heading">{stepItem.instruction}</h3>
+                    <span className="step-number-tag">Step {stepNum}</span>
+                    <h3 className="step-instruction-heading">{stepTitle}</h3>
                   </div>
 
                   {isCompleted && (

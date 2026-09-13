@@ -22,6 +22,8 @@ import { DesktopRunbooksView } from "./components/DesktopRunbooksView.jsx";
 import { DesktopOnboardingView } from "./components/DesktopOnboardingView.jsx";
 import { TopNav } from "./components/TopNav.jsx";
 import { Sidebar } from "./components/Sidebar.jsx";
+import { CommandPalette } from "./components/CommandPalette.jsx";
+import { DeclareIncidentModal } from "./components/DeclareIncidentModal.jsx";
 
 import { 
   AlertOctagon, 
@@ -328,6 +330,10 @@ export function App() {
             setCurrentTab(tab);
             setSelectedIncident(null);
           }}
+          onDeclareIncident={() => {
+            setIsCmdPaletteOpen(false);
+            setIsDeclareModalOpen(true);
+          }}
           onSelectIncident={(inc) => {
             setCurrentView("app");
             setSelectedIncident(inc);
@@ -343,6 +349,7 @@ export function App() {
           isOpen={isDeclareModalOpen}
           onClose={() => setIsDeclareModalOpen(false)}
           onDeclare={handleDeclareIncident}
+          onDeclareIncident={handleDeclareIncident}
           services={services}
         />
       </div>
@@ -642,6 +649,10 @@ export function App() {
           setCurrentTab(tab);
           setSelectedIncident(null);
         }}
+        onDeclareIncident={() => {
+          setIsCmdPaletteOpen(false);
+          setIsDeclareModalOpen(true);
+        }}
         onSelectIncident={(inc) => {
           setCurrentView("app");
           setSelectedIncident(inc);
@@ -657,6 +668,7 @@ export function App() {
         isOpen={isDeclareModalOpen}
         onClose={() => setIsDeclareModalOpen(false)}
         onDeclare={handleDeclareIncident}
+        onDeclareIncident={handleDeclareIncident}
         services={services}
       />
     </div>
